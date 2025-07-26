@@ -825,7 +825,7 @@ impl Invoke {
             function_ty: callinfo.function_ty,
             arguments: callinfo.arguments,
             return_attributes: callinfo.return_attributes,
-            result: Name::name_or_num(unsafe { get_value_name(term) }, &mut func_ctx.ctr),
+            result: Name::name_or_num(unsafe { get_value_name(term) }, &mut func_ctx.ctr, &mut ctx.string_interner),
             return_label: func_ctx
                 .bb_names
                 .get(unsafe { &LLVMGetNormalDest(term) })
@@ -961,7 +961,7 @@ impl CatchSwitch {
                     )
                 }
             },
-            result: Name::name_or_num(unsafe { get_value_name(term) }, &mut func_ctx.ctr),
+            result: Name::name_or_num(unsafe { get_value_name(term) }, &mut func_ctx.ctr, &mut ctx.string_interner),
             debugloc: DebugLoc::from_llvm_with_col(term, &mut ctx.string_interner),
             // metadata: InstructionMetadata::from_llvm_inst(term),
         }
@@ -980,7 +980,7 @@ impl CallBr {
             function: callinfo.function,
             arguments: callinfo.arguments,
             return_attributes: callinfo.return_attributes,
-            result: Name::name_or_num(unsafe { get_value_name(term) }, &mut func_ctx.ctr),
+            result: Name::name_or_num(unsafe { get_value_name(term) }, &mut func_ctx.ctr, &mut ctx.string_interner),
             return_label: func_ctx
                 .bb_names
                 .get(unsafe { &LLVMGetNormalDest(term) })

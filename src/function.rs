@@ -355,7 +355,7 @@ impl FunctionDeclaration {
                 let parameters: Vec<Parameter> = get_parameters(func)
                     .enumerate()
                     .map(|(i, p)| Parameter {
-                        name: Name::name_or_num(unsafe { get_value_name(p) }, &mut local_ctr),
+                        name: Name::name_or_num(unsafe { get_value_name(p) }, &mut local_ctr, &mut ctx.string_interner),
                         ty: ctx.types.type_from_llvm_ref(unsafe { LLVMTypeOf(p) }),
                         attributes: {
                             let param_num = i + 1; // https://docs.rs/llvm-sys/100.0.1/llvm_sys/type.LLVMAttributeIndex.html indicates that parameter numbers are 1-indexed here; see issue #4
@@ -455,7 +455,7 @@ impl Function {
         //   we wouldn't necessarily know what `Name` the block or value had yet.
         let mut local_ctr = ctr_val_after_parameters; // this counter is used to number parameters, variables, and basic blocks that aren't named
         let bbresults: Vec<_> = get_basic_blocks(func)
-            .map(|bb| (bb, BasicBlock::first_pass_names(bb, &mut local_ctr)))
+            .map(|bb| (bb, BasicBlock::first_pass_names(bb, &mut local_ctr, &mut ctx.string_interner)))
             .collect();
         // We use LLVMBasicBlockRef as a *const, even though it's technically a *mut
         #[allow(clippy::mutable_key_type)]

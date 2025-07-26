@@ -43,7 +43,7 @@ impl BasicBlock {
         ctx: &mut ModuleContext,
         func_ctx: &mut FunctionContext,
     ) -> Self {
-        let name = Name::name_or_num(unsafe { get_bb_name(bb) }, &mut func_ctx.ctr);
+        let name = Name::name_or_num(unsafe { get_bb_name(bb) }, &mut func_ctx.ctr, &mut ctx.string_interner);
         debug_assert_eq!(
             &name,
             func_ctx
@@ -69,20 +69,21 @@ impl BasicBlock {
     pub(crate) fn first_pass_names(
         bb: LLVMBasicBlockRef,
         ctr: &mut usize,
+        interner: &mut crate::from_llvm::StringInterner,
     ) -> (Name, Vec<(LLVMValueRef, Name)>) {
-        let bbname = Name::name_or_num(unsafe { get_bb_name(bb) }, ctr);
+        let bbname = Name::name_or_num(unsafe { get_bb_name(bb) }, ctr, interner);
         let mut instnames = vec![];
         for inst in all_but_last(get_instructions(bb)).filter(|&i| needs_name(i)) {
             instnames.push((
                 inst,
-                Name::name_or_num(unsafe { get_value_name(inst) }, ctr),
+                Name::name_or_num(unsafe { get_value_name(inst) }, ctr, interner),
             ));
         }
         let term = unsafe { LLVMGetBasicBlockTerminator(bb) };
         if term_needs_name(term) {
             instnames.push((
                 term,
-                Name::name_or_num(unsafe { get_value_name(term) }, ctr),
+                Name::name_or_num(unsafe { get_value_name(term) }, ctr, interner),
             ));
         }
         (bbname, instnames)

@@ -619,13 +619,13 @@ pub(crate) struct ModuleContext<'a> {
 impl<'a> ModuleContext<'a> {
     // We use LLVMValueRef as a *const, even though it's technically a *mut
     #[allow(clippy::mutable_key_type)]
-    fn new(global_names: &'a HashMap<LLVMValueRef, Name>) -> Self {
+    fn new(global_names: &'a HashMap<LLVMValueRef, Name>, string_interner: StringInterner) -> Self {
         Self {
             types: TypesBuilder::new(),
             attrsdata: AttributesData::create(),
             constants: HashMap::new(),
             global_names,
-            string_interner: StringInterner::new(),
+            string_interner,
         }
     }
 }
@@ -634,6 +634,7 @@ impl Module {
     pub(crate) fn from_llvm_ref(module: LLVMModuleRef) -> Self {
         debug!("Creating a Module from an LLVMModuleRef");
         let mut global_ctr = 0; // this ctr is used to number global objects that aren't named
+        let mut string_interner = StringInterner::new();
 
         // Modules require two passes over their contents.
         // First we make a pass just to map global objects -- in particular,
@@ -652,13 +653,17 @@ impl Module {
             .map(|g| {
                 (
                     g,
-                    Name::name_or_num(unsafe { get_value_name(g) }, &mut global_ctr),
+                    Name::name_or_num(
+                        unsafe { get_value_name(g) },
+                        &mut global_ctr,
+                        &mut string_interner,
+                    ),
                 )
             })
             .collect();
         global_ctr = 0; // reset the global_ctr; the second pass should number everything exactly the same though
 
-        let mut ctx = ModuleContext::new(&global_names);
+        let mut ctx = ModuleContext::new(&global_names, string_interner);
 
         Self {
             name: unsafe { get_module_identifier(module) },
@@ -703,7 +708,11 @@ impl GlobalVariable {
         };
         debug!("Processing a GlobalVariable with type {:?}", ty);
         Self {
-            name: Name::name_or_num(unsafe { get_value_name(global) }, ctr),
+            name: Name::name_or_num(
+                unsafe { get_value_name(global) },
+                ctr,
+                &mut ctx.string_interner,
+            ),
             linkage: Linkage::from_llvm(unsafe { LLVMGetLinkage(global) }),
             visibility: Visibility::from_llvm(unsafe { LLVMGetVisibility(global) }),
             is_constant: unsafe { LLVMIsGlobalConstant(global) } != 0,
@@ -752,7 +761,11 @@ impl GlobalAlias {
             _ => panic!("GlobalAlias has a non-pointer type, {:?}", ty),
         };
         Self {
-            name: Name::name_or_num(unsafe { get_value_name(alias) }, ctr),
+            name: Name::name_or_num(
+                unsafe { get_value_name(alias) },
+                ctr,
+                &mut ctx.string_interner,
+            ),
             aliasee: Constant::from_llvm_ref(unsafe { LLVMAliasGetAliasee(alias) }, ctx),
             linkage: Linkage::from_llvm(unsafe { LLVMGetLinkage(alias) }),
             visibility: Visibility::from_llvm(unsafe { LLVMGetVisibility(alias) }),
@@ -772,7 +785,11 @@ impl GlobalIFunc {
         ctx: &mut ModuleContext,
     ) -> Self {
         Self {
-            name: Name::name_or_num(unsafe { get_value_name(ifunc) }, ctr),
+            name: Name::name_or_num(
+                unsafe { get_value_name(ifunc) },
+                ctr,
+                &mut ctx.string_interner,
+            ),
             linkage: Linkage::from_llvm(unsafe { LLVMGetLinkage(ifunc) }),
             visibility: Visibility::from_llvm(unsafe { LLVMGetVisibility(ifunc) }),
             ty: ctx.types.type_from_llvm_ref(unsafe { LLVMTypeOf(ifunc) }),

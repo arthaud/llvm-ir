@@ -45,6 +45,8 @@ fn llvm_bc_dir() -> PathBuf {
         Path::new(BC_DIR).join("llvm18")
     } else if cfg!(feature = "llvm-19") {
         Path::new(BC_DIR).join("llvm19")
+    } else if cfg!(feature = "llvm-20") {
+        Path::new(BC_DIR).join("llvm20")
     } else {
         unimplemented!("new llvm version?")
     }
@@ -74,6 +76,8 @@ fn cxx_llvm_bc_dir() -> PathBuf {
         Path::new(BC_DIR).join("cxx-llvm18")
     } else if cfg!(feature = "llvm-19") {
         Path::new(BC_DIR).join("cxx-llvm19")
+    } else if cfg!(feature = "llvm-20") {
+        Path::new(BC_DIR).join("cxx-llvm20")
     } else {
         unimplemented!("new llvm version?")
     }
@@ -101,9 +105,15 @@ fn hellobc() {
         Some("x86_64-apple-macosx11.0.0".into())
     );
     #[cfg(feature = "llvm-14-or-greater")]
+    #[cfg(feature = "llvm-19-or-lower")]
     assert_eq!(
         module.target_triple,
         Some("x86_64-apple-macosx12.0.0".into())
+    );
+    #[cfg(feature = "llvm-20-or-greater")]
+    assert_eq!(
+        module.target_triple,
+        Some("x86_64-unknown-linux-gnu".into())
     );
     assert_eq!(module.functions.len(), 1);
     let func = &module.functions[0];
@@ -1679,10 +1689,12 @@ fn issue4() {
     } else if cfg!(feature = "llvm-15") {
         // LLVM 15+ adds "argmemonly"
         17
-    } else if cfg!(feature = "llvm-16-or-greater") {
+    } else if cfg!(feature = "llvm-19-or-lower") {
         // LLVM 16+ merges "argmemonly", "inaccessiblememonly", etc. into a single memory attribute
         // See https://discourse.llvm.org/t/rfc-unify-memory-effect-attributes/65579/20
         16
+    } else if cfg!(feature = "llvm-20-or-greater") {
+        14
     } else {
         panic!("Shouldn't reach this")
     };
@@ -1703,8 +1715,10 @@ fn issue4() {
         9 // adds "mustprogress" and "nosync"
     } else if cfg!(feature = "llvm-15") {
         10 // adds "argmemonly"
-    } else if cfg!(feature = "llvm-16-or-greater") {
+    } else if cfg!(feature = "llvm-19-or-lower") {
         9 // new "memory" attribute combines "argmemonly" and related attributes
+    } else if cfg!(feature = "llvm-20-or-greater") {
+        8
     } else {
         unreachable!("Shouldn't reach this")
     };
@@ -1730,7 +1744,10 @@ fn issue4() {
     #[cfg(all(feature = "llvm-14-or-greater", feature = "llvm-17-or-lower"))]
     assert_eq!(first_param_attrs.len(), 5);
     #[cfg(feature = "llvm-18-or-greater")]
+    #[cfg(feature = "llvm-19-or-lower")]
     assert_eq!(first_param_attrs.len(), 7); // Clang 18 adds dead_on_unwind and writable
+    #[cfg(feature = "llvm-20-or-greater")]
+    assert_eq!(first_param_attrs.len(), 8);
     let second_param_attrs = &func.parameters[1].attributes;
     #[cfg(feature = "llvm-13-or-lower")]
     assert_eq!(second_param_attrs.len(), 0);
@@ -2811,12 +2828,21 @@ fn datalayouts() {
     // Data layout changed from Clang 17 to 18, even w/ an explicit --target=x86_64-apple-macosx12.0.0
     #[cfg(feature = "llvm-18-or-greater")]
     {
+        #[cfg(feature = "llvm-19-or-lower")]
         assert_eq!(
             &data_layout.layout_str,
             "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
         );
+        #[cfg(feature = "llvm-20-or-greater")]
+        assert_eq!(
+            &data_layout.layout_str,
+            "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
+        );
         assert_eq!(&data_layout.endianness, &Endianness::LittleEndian);
+        #[cfg(feature = "llvm-19-or-lower")]
         assert_eq!(&data_layout.mangling, &Some(Mangling::MachO));
+        #[cfg(feature = "llvm-20-or-greater")]
+        assert_eq!(&data_layout.mangling, &Some(Mangling::ELF));
         assert_eq!(
             data_layout.alignments.ptr_alignment(270),
             &PointerLayout {

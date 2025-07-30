@@ -9,6 +9,7 @@ use crate::types::NamedStructDef;
 use crate::types::{Type, TypeRef, Typed, Types};
 use either::Either;
 use std::convert::TryFrom;
+use std::ffi::CStr;
 use std::fmt::{self, Debug, Display};
 
 /// Non-terminator instructions.
@@ -2534,6 +2535,22 @@ impl Instruction {
         debug!("Processing instruction {:?}", unsafe {
             print_to_string(inst)
         });
+        #[cfg(feature = "llvm-20-or-greater")]
+        for dbg_record in get_dbg_records(inst) {
+            let s_ptr = unsafe { LLVMPrintDbgRecordToString(dbg_record) };
+            let s: Option<String> = unsafe {
+                if s_ptr.is_null() {
+                    None
+                } else {
+                    Some(CStr::from_ptr(s_ptr).to_str().unwrap().into())
+                }
+            };
+            debug!("Found debug record: {:?}", s);
+            unsafe {
+                LLVMDisposeMessage(s_ptr);
+            }
+        }
+
         match unsafe { LLVMGetInstructionOpcode(inst) } {
             LLVMOpcode::LLVMAdd => Instruction::Add(Add::from_llvm_ref(inst, ctx, func_ctx)),
             LLVMOpcode::LLVMSub => Instruction::Sub(Sub::from_llvm_ref(inst, ctx, func_ctx)),

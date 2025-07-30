@@ -3177,3 +3177,14 @@ fn parseir() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(ret.debugloc, None);
     Ok(())
 }
+
+#[test]
+#[allow(clippy::cognitive_complexity)]
+fn debug_records() {
+    init_logging();
+    let path = llvm_bc_dir().join("loop.bc-g");
+    let module = Module::from_bc_path(&path).expect("Failed to parse module");
+
+    // get function and check info on it
+    assert_eq!(module.functions.len(), 1);
+}

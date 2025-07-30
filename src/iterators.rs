@@ -35,6 +35,11 @@ pub fn get_instructions(bb: LLVMBasicBlockRef) -> impl Iterator<Item = LLVMValue
     InstructionIterator::new(bb)
 }
 
+#[cfg(feature = "llvm-20-or-greater")]
+pub fn get_dbg_records(inst: LLVMValueRef) -> impl Iterator<Item = LLVMDbgRecordRef> {
+    DbgRecordIterator::new(inst)
+}
+
 macro_rules! iterator {
     ($struct_name:ident, $parent:ty, $item:ty, $init:ident, $next:ident) => {
         struct $struct_name {
@@ -113,6 +118,14 @@ iterator!(
     LLVMValueRef,
     LLVMGetFirstInstruction,
     LLVMGetNextInstruction
+);
+#[cfg(feature = "llvm-20-or-greater")]
+iterator!(
+    DbgRecordIterator,
+    LLVMValueRef,
+    LLVMDbgRecordRef,
+    LLVMGetFirstDbgRecord,
+    LLVMGetNextDbgRecord
 );
 
 pub fn all_but_last<I, T>(i: I) -> impl Iterator<Item = T>

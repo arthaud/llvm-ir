@@ -42,7 +42,7 @@ LLVMAS20=$(LLVM20PATH)/bin/llvm-as
 
 COBJS = \
 	hello.bc hello.ll hello.bc-g hello.ll-g \
-	loop.bc loop.ll \
+	loop.bc loop.ll loop.bc-g loop.ll-g \
 	switch.bc switch.ll \
 	linkedlist.bc linkedlist.ll linkedlist.bc-g linkedlist.ll-g \
 	variables.bc variables.ll variables.bc-g variables.ll-g \

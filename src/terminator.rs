@@ -328,7 +328,7 @@ impl Display for IndirectBr {
                 .get(0)
                 .expect("IndirectBr with no possible dests"),
         )?;
-        for dest in &self.possible_dests[1 ..] {
+        for dest in &self.possible_dests[1..] {
             write!(f, ", label {}", dest)?;
         }
         write!(f, " ]")?;
@@ -546,7 +546,7 @@ impl Display for CatchSwitch {
                 .get(0)
                 .expect("CatchSwitch with no handlers"),
         )?;
-        for handler in &self.catch_handlers[1 ..] {
+        for handler in &self.catch_handlers[1..] {
             write!(f, ", label {}", handler)?;
         }
         write!(
@@ -711,7 +711,11 @@ impl Ret {
 }
 
 impl Br {
-    pub(crate) fn from_llvm_ref(term: LLVMValueRef, ctx: &mut ModuleContext, func_ctx: &mut FunctionContext) -> Self {
+    pub(crate) fn from_llvm_ref(
+        term: LLVMValueRef,
+        ctx: &mut ModuleContext,
+        func_ctx: &mut FunctionContext,
+    ) -> Self {
         assert_eq!(unsafe { LLVMGetNumOperands(term) }, 1);
         Self {
             dest: func_ctx
@@ -760,7 +764,7 @@ impl Switch {
             operand: Operand::from_llvm_ref(unsafe { LLVMGetOperand(term, 0) }, ctx, func_ctx),
             dests: {
                 let num_dests = unsafe { LLVMGetNumSuccessors(term) };
-                let dest_bbs = (1 ..= num_dests) // LLVMGetSuccessor(0) apparently gives the default dest
+                let dest_bbs = (1..=num_dests) // LLVMGetSuccessor(0) apparently gives the default dest
                     .map(|i| {
                         func_ctx
                             .bb_names
@@ -768,7 +772,7 @@ impl Switch {
                             .expect("Failed to find switch destination in map")
                             .clone()
                     });
-                let dest_vals = (1 .. num_dests).map(|i| {
+                let dest_vals = (1..num_dests).map(|i| {
                     Constant::from_llvm_ref(unsafe { LLVMGetOperand(term, 2 * i) }, ctx)
                     // 2*i because empirically, operand 1 is the default dest, and operands 3/5/7/etc are the successor blocks
                 });
@@ -795,7 +799,7 @@ impl IndirectBr {
             operand: Operand::from_llvm_ref(unsafe { LLVMGetOperand(term, 0) }, ctx, func_ctx),
             possible_dests: {
                 let num_dests = unsafe { LLVMGetNumSuccessors(term) };
-                (0 .. num_dests)
+                (0..num_dests)
                     .map(|i| {
                         func_ctx
                             .bb_names
@@ -825,7 +829,11 @@ impl Invoke {
             function_ty: callinfo.function_ty,
             arguments: callinfo.arguments,
             return_attributes: callinfo.return_attributes,
-            result: Name::name_or_num(unsafe { get_value_name(term) }, &mut func_ctx.ctr, &mut ctx.string_interner),
+            result: Name::name_or_num(
+                unsafe { get_value_name(term) },
+                &mut func_ctx.ctr,
+                &mut ctx.string_interner,
+            ),
             return_label: func_ctx
                 .bb_names
                 .get(unsafe { &LLVMGetNormalDest(term) })
@@ -961,7 +969,11 @@ impl CatchSwitch {
                     )
                 }
             },
-            result: Name::name_or_num(unsafe { get_value_name(term) }, &mut func_ctx.ctr, &mut ctx.string_interner),
+            result: Name::name_or_num(
+                unsafe { get_value_name(term) },
+                &mut func_ctx.ctr,
+                &mut ctx.string_interner,
+            ),
             debugloc: DebugLoc::from_llvm_with_col(term, &mut ctx.string_interner),
             // metadata: InstructionMetadata::from_llvm_inst(term),
         }
@@ -980,7 +992,11 @@ impl CallBr {
             function: callinfo.function,
             arguments: callinfo.arguments,
             return_attributes: callinfo.return_attributes,
-            result: Name::name_or_num(unsafe { get_value_name(term) }, &mut func_ctx.ctr, &mut ctx.string_interner),
+            result: Name::name_or_num(
+                unsafe { get_value_name(term) },
+                &mut func_ctx.ctr,
+                &mut ctx.string_interner,
+            ),
             return_label: func_ctx
                 .bb_names
                 .get(unsafe { &LLVMGetNormalDest(term) })

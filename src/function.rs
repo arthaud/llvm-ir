@@ -165,18 +165,18 @@ pub enum MemoryEffect {
     None,
     Read,
     Write,
-    ReadWrite
+    ReadWrite,
 }
 
 impl MemoryEffect {
     // See https://github.com/llvm/llvm-project/blob/7cbf1a2591520c2491aa35339f227775f4d3adf6/llvm/include/llvm/Support/ModRef.h#L27
-    pub(crate) fn from_llvm_bits(val : u64) -> Self {
+    pub(crate) fn from_llvm_bits(val: u64) -> Self {
         match val {
             0b00 => Self::None,
             0b01 => Self::Read,
             0b10 => Self::Write,
             0b11 => Self::ReadWrite,
-            _ => panic!("Memory effect given unexpected bits {}", val)
+            _ => panic!("Memory effect given unexpected bits {}", val),
         }
     }
 }
@@ -242,7 +242,7 @@ pub enum FunctionAttribute {
     Memory {
         default: MemoryEffect,
         argmem: MemoryEffect,
-        inaccessible_mem: MemoryEffect
+        inaccessible_mem: MemoryEffect,
     },
     StringAttribute {
         kind: String,
@@ -355,7 +355,11 @@ impl FunctionDeclaration {
                 let parameters: Vec<Parameter> = get_parameters(func)
                     .enumerate()
                     .map(|(i, p)| Parameter {
-                        name: Name::name_or_num(unsafe { get_value_name(p) }, &mut local_ctr, &mut ctx.string_interner),
+                        name: Name::name_or_num(
+                            unsafe { get_value_name(p) },
+                            &mut local_ctr,
+                            &mut ctx.string_interner,
+                        ),
                         ty: ctx.types.type_from_llvm_ref(unsafe { LLVMTypeOf(p) }),
                         attributes: {
                             let param_num = i + 1; // https://docs.rs/llvm-sys/100.0.1/llvm_sys/type.LLVMAttributeIndex.html indicates that parameter numbers are 1-indexed here; see issue #4
@@ -455,7 +459,12 @@ impl Function {
         //   we wouldn't necessarily know what `Name` the block or value had yet.
         let mut local_ctr = ctr_val_after_parameters; // this counter is used to number parameters, variables, and basic blocks that aren't named
         let bbresults: Vec<_> = get_basic_blocks(func)
-            .map(|bb| (bb, BasicBlock::first_pass_names(bb, &mut local_ctr, &mut ctx.string_interner)))
+            .map(|bb| {
+                (
+                    bb,
+                    BasicBlock::first_pass_names(bb, &mut local_ctr, &mut ctx.string_interner),
+                )
+            })
             .collect();
         // We use LLVMBasicBlockRef as a *const, even though it's technically a *mut
         #[allow(clippy::mutable_key_type)]
@@ -658,7 +667,7 @@ impl AttributesData {
             "strictfp",
             "uwtable",
             #[cfg(feature = "llvm-16-or-greater")]
-            "memory"
+            "memory",
         ]
         .iter()
         .map(|&attrname| {
@@ -796,14 +805,14 @@ impl FunctionAttribute {
                     // See https://github.com/llvm/llvm-project/blob/7cbf1a2591520c2491aa35339f227775f4d3adf6/llvm/include/llvm/Support/ModRef.h#L63
                     // for the breakdown of the encoding logic
 
-                    let encoded_argmem           = (value >> 0) & 0b11;
+                    let encoded_argmem = (value >> 0) & 0b11;
                     let encoded_inaccessible_mem = (value >> 2) & 0b11;
-                    let encoded_default_mem      = (value >> 4) & 0b11;
+                    let encoded_default_mem = (value >> 4) & 0b11;
 
                     Self::Memory {
                         default: MemoryEffect::from_llvm_bits(encoded_default_mem),
                         argmem: MemoryEffect::from_llvm_bits(encoded_argmem),
-                        inaccessible_mem: MemoryEffect::from_llvm_bits(encoded_inaccessible_mem)
+                        inaccessible_mem: MemoryEffect::from_llvm_bits(encoded_inaccessible_mem),
                     }
                 },
                 Some(s) => panic!("Unhandled value from lookup_function_attr: {:?}", s),

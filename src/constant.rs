@@ -63,10 +63,10 @@ pub enum Constant {
     /// See [LLVM 19 docs on ptrauth constants](https://releases.llvm.org/19.1.0/docs/LangRef.html#pointer-authentication-constants)
     #[cfg(feature = "llvm-19-or-greater")]
     PtrAuth {
-        ptr : ConstantRef,
-        key : ConstantRef,
-        disc : ConstantRef,
-        addr_disc : ConstantRef
+        ptr: ConstantRef,
+        key: ConstantRef,
+        disc: ConstantRef,
+        addr_disc: ConstantRef,
     },
 
     // Constants can also be expressed as operations applied to other constants:
@@ -500,12 +500,17 @@ impl Display for Constant {
             Constant::ICmp(i) => write!(f, "{}", i),
             #[cfg(feature = "llvm-18-or-lower")]
             Constant::FCmp(c) => write!(f, "{}", c),
-            #[cfg(feature="llvm-16-or-lower")]
+            #[cfg(feature = "llvm-16-or-lower")]
             Constant::Select(s) => write!(f, "{}", s),
-            #[cfg(feature="llvm-19-or-greater")]
-            Constant::PtrAuth { ptr, key, disc, addr_disc } => {
+            #[cfg(feature = "llvm-19-or-greater")]
+            Constant::PtrAuth {
+                ptr,
+                key,
+                disc,
+                addr_disc,
+            } => {
                 write!(f, "ptrauth({}, {}, {}, {})", ptr, key, disc, addr_disc)
-            }
+            },
         }
     }
 }
@@ -1385,7 +1390,7 @@ impl Display for FCmp {
     }
 }
 
-#[cfg(feature="llvm-16-or-lower")]
+#[cfg(feature = "llvm-16-or-lower")]
 #[derive(PartialEq, Clone, Debug, Hash)]
 pub struct Select {
     pub condition: ConstantRef,
@@ -1393,10 +1398,10 @@ pub struct Select {
     pub false_value: ConstantRef,
 }
 
-#[cfg(feature="llvm-16-or-lower")]
+#[cfg(feature = "llvm-16-or-lower")]
 impl_constexpr!(Select, Select);
 
-#[cfg(feature="llvm-16-or-lower")]
+#[cfg(feature = "llvm-16-or-lower")]
 impl Typed for Select {
     fn get_type(&self, types: &Types) -> TypeRef {
         let t = types.type_of(&self.true_value);
@@ -1405,7 +1410,7 @@ impl Typed for Select {
     }
 }
 
-#[cfg(feature="llvm-16-or-lower")]
+#[cfg(feature = "llvm-16-or-lower")]
 impl Display for Select {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
@@ -1787,7 +1792,7 @@ impl GetElementPtr {
             address: Constant::from_llvm_ref(unsafe { LLVMGetOperand(expr, 0) }, ctx),
             indices: {
                 let num_indices = unsafe { LLVMGetNumOperands(expr) as u32 } - 1; // LLVMGetNumIndices(), which we use for instruction::GetElementPtr, appears empirically to not work for constant::GetElementPtr
-                (1 ..= num_indices)
+                (1..=num_indices)
                     .map(|i| Constant::from_llvm_ref(unsafe { LLVMGetOperand(expr, i) }, ctx))
                     .collect()
             },
@@ -1858,7 +1863,7 @@ impl FCmp {
     }
 }
 
-#[cfg(feature="llvm-16-or-lower")]
+#[cfg(feature = "llvm-16-or-lower")]
 impl Select {
     pub(crate) fn from_llvm_ref(expr: LLVMValueRef, ctx: &mut ModuleContext) -> Self {
         assert_eq!(unsafe { LLVMGetNumOperands(expr) }, 3);

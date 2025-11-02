@@ -73,12 +73,16 @@ impl Module {
 
     /// Get the `GlobalAlias` having the given `Name` (if any).
     pub fn get_global_alias_by_name(&self, name: &Name) -> Option<&GlobalAlias> {
-        self.global_aliases.iter().find(|global| global.name == *name)
+        self.global_aliases
+            .iter()
+            .find(|global| global.name == *name)
     }
 
     /// Get the `GlobalIFunc` having the given `Name` (if any).
     pub fn get_global_ifunc_by_name(&self, name: &Name) -> Option<&GlobalIFunc> {
-        self.global_ifuncs.iter().find(|global| global.name == *name)
+        self.global_ifuncs
+            .iter()
+            .find(|global| global.name == *name)
     }
 
     /// Parse the LLVM bitcode (.bc) file at the given path to create a `Module`
@@ -93,7 +97,7 @@ impl Module {
             LLVMDisposeMemoryBuffer(mem_buf);
             match result {
                 0 => Ok(()),
-                _ => Err("Failed to parse bitcode".to_owned())
+                _ => Err("Failed to parse bitcode".to_owned()),
             }
         }
         Self::from_path(path, parse_bc)
@@ -124,10 +128,19 @@ impl Module {
         use std::ffi::CStr;
         let mut err_string = std::mem::zeroed();
         // This call takes ownership of the buffer, so we don't free it.
-        match llvm_sys::ir_reader::LLVMParseIRInContext(context_ref, mem_buf, out_module, &mut err_string) {
+        match llvm_sys::ir_reader::LLVMParseIRInContext(
+            context_ref,
+            mem_buf,
+            out_module,
+            &mut err_string,
+        ) {
             0 => Ok(()),
-            _ => Err(format!("Failed to parse IR: {}",
-                             CStr::from_ptr(err_string).to_str().expect("Failed to convert CStr")))
+            _ => Err(format!(
+                "Failed to parse IR: {}",
+                CStr::from_ptr(err_string)
+                    .to_str()
+                    .expect("Failed to convert CStr")
+            )),
         }
     }
 
@@ -592,11 +605,7 @@ use crate::from_llvm::*;
 use crate::function::AttributesData;
 use llvm_sys::comdat::*;
 use llvm_sys::{
-    LLVMDLLStorageClass,
-    LLVMLinkage,
-    LLVMThreadLocalMode,
-    LLVMUnnamedAddr,
-    LLVMVisibility,
+    LLVMDLLStorageClass, LLVMLinkage, LLVMThreadLocalMode, LLVMUnnamedAddr, LLVMVisibility,
 };
 
 /// This struct contains data used when translating llvm-sys objects into our
@@ -942,7 +951,7 @@ impl DataLayout {
                 let addr_space: AddrSpace = if first_chunk == "p" {
                     0
                 } else {
-                    first_chunk[1 ..]
+                    first_chunk[1..]
                         .parse()
                         .expect("datalayout 'p': Failed to parse address space")
                 };
@@ -984,7 +993,7 @@ impl DataLayout {
             } else if spec.starts_with('i') {
                 let mut chunks = spec.split(':');
                 let first_chunk = chunks.next().unwrap();
-                let size: u32 = first_chunk[1 ..]
+                let size: u32 = first_chunk[1..]
                     .parse()
                     .expect("datalayout 'i': Failed to parse size");
                 let second_chunk = chunks
@@ -1008,7 +1017,7 @@ impl DataLayout {
             } else if spec.starts_with('v') {
                 let mut chunks = spec.split(':');
                 let first_chunk = chunks.next().unwrap();
-                let size: u32 = first_chunk[1 ..]
+                let size: u32 = first_chunk[1..]
                     .parse()
                     .expect("datalayout 'v': Failed to parse size");
                 let second_chunk = chunks
@@ -1032,7 +1041,7 @@ impl DataLayout {
             } else if spec.starts_with('f') {
                 let mut chunks = spec.split(':');
                 let first_chunk = chunks.next().unwrap();
-                let size: u32 = first_chunk[1 ..]
+                let size: u32 = first_chunk[1..]
                     .parse()
                     .expect("datalayout 'f': Failed to parse size");
                 let second_chunk = chunks
@@ -1080,8 +1089,7 @@ impl DataLayout {
                     independent: true,
                     abi,
                 };
-                data_layout.alignments.fptr_alignment_as_alignment =
-                    Alignment { abi, pref: abi };
+                data_layout.alignments.fptr_alignment_as_alignment = Alignment { abi, pref: abi };
             } else if let Some(stripped) = spec.strip_prefix("Fn") {
                 let abi: u32 = stripped
                     .parse()
@@ -1090,8 +1098,7 @@ impl DataLayout {
                     independent: false,
                     abi,
                 };
-                data_layout.alignments.fptr_alignment_as_alignment =
-                    Alignment { abi, pref: abi };
+                data_layout.alignments.fptr_alignment_as_alignment = Alignment { abi, pref: abi };
             } else if spec.starts_with('m') {
                 let mut chunks = spec.split(':');
                 let first_chunk = chunks.next().unwrap();
@@ -1128,7 +1135,7 @@ impl DataLayout {
                     .get_or_insert_with(HashSet::new);
                 let mut chunks = spec.split(':');
                 let first_chunk = chunks.next().unwrap();
-                let size = first_chunk[1 ..]
+                let size = first_chunk[1..]
                     .parse()
                     .expect("datalayout 'n': Failed to parse first size");
                 native_int_widths.insert(size);

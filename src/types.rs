@@ -162,20 +162,20 @@ impl Display for Type {
             Type::TokenType => write!(f, "token"),
             #[cfg(feature = "llvm-16-or-greater")]
             Type::TargetExtType => write!(f, "target()"),
-                // someday if/when TargetExtType contains other fields, we need something like the below:
-                /*
-                // Name, then type parameters first then integer parameters.
-                let members = [name]
-                    .iter()
-                    .map(|name| format!("\"{name}\""))
-                    .chain(contained_types.iter().map(ToString::to_string))
-                    .chain(contained_ints.iter().map(ToString::to_string))
-                    .collect::<Vec<_>>()
-                    .join(", ");
-                write!(f, "target({members})")?;
+            // someday if/when TargetExtType contains other fields, we need something like the below:
+            /*
+            // Name, then type parameters first then integer parameters.
+            let members = [name]
+                .iter()
+                .map(|name| format!("\"{name}\""))
+                .chain(contained_types.iter().map(ToString::to_string))
+                .chain(contained_ints.iter().map(ToString::to_string))
+                .collect::<Vec<_>>()
+                .join(", ");
+            write!(f, "target({members})")?;
 
-                Ok(())
-                */
+            Ok(())
+            */
         }
     }
 }
@@ -1048,7 +1048,7 @@ impl TypesBuilder {
             },
             LLVMTypeKind::LLVMArrayTypeKind => {
                 let element_type = self.type_from_llvm_ref(unsafe { LLVMGetElementType(ty) });
-                
+
                 // LLVMGetArrayLength2 was added in LLVM-17: the old function still exists there,
                 // but is deprecated. The parameters are the same, but the return type is changed
                 // from c_uint to u64
@@ -1056,7 +1056,7 @@ impl TypesBuilder {
                 let array_len = unsafe { LLVMGetArrayLength(ty) as usize };
                 #[cfg(feature = "llvm-17-or-greater")]
                 let array_len = unsafe { LLVMGetArrayLength2(ty) as usize };
-                
+
                 self.array_of(element_type, array_len)
             },
             LLVMTypeKind::LLVMVectorTypeKind => {

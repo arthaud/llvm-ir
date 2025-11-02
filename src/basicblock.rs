@@ -19,9 +19,7 @@ impl BasicBlock {
         Self {
             name,
             instrs: vec![],
-            term: Terminator::Unreachable(Unreachable {
-                debugloc: None,
-            }),
+            term: Terminator::Unreachable(Unreachable { debugloc: None }),
         }
     }
 }
@@ -43,7 +41,11 @@ impl BasicBlock {
         ctx: &mut ModuleContext,
         func_ctx: &mut FunctionContext,
     ) -> Self {
-        let name = Name::name_or_num(unsafe { get_bb_name(bb) }, &mut func_ctx.ctr, &mut ctx.string_interner);
+        let name = Name::name_or_num(
+            unsafe { get_bb_name(bb) },
+            &mut func_ctx.ctr,
+            &mut ctx.string_interner,
+        );
         debug_assert_eq!(
             &name,
             func_ctx

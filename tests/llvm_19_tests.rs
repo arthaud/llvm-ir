@@ -28,19 +28,33 @@ fn ptr_auth() {
     let path = Path::new("tests/llvm_bc/compatibility-as-of-llvm-19.bc");
     let module = Module::from_bc_path(path).expect("Failed to parse module");
 
-    let auth_var = module.global_vars.iter().find(|var| var.name == "auth_var".into())
+    let auth_var = module
+        .global_vars
+        .iter()
+        .find(|var| var.name == "auth_var".into())
         .expect("auth_var variable should exist");
 
-    let auth_var_init = auth_var.initializer.clone().expect("auth_var should be initialised");
+    let auth_var_init = auth_var
+        .initializer
+        .clone()
+        .expect("auth_var should be initialised");
 
-    if let Constant::PtrAuth { ptr, key, disc, addr_disc } = auth_var_init.as_ref() {
+    if let Constant::PtrAuth {
+        ptr,
+        key,
+        disc,
+        addr_disc,
+    } = auth_var_init.as_ref()
+    {
         assert_eq!(&format!("{ptr}"), "ptr @g1");
         assert_eq!(&format!("{key}"), "i32 0");
         assert_eq!(&format!("{disc}"), "i64 65535");
         assert_eq!(&format!("{addr_disc}"), "ptr null");
-    }
-    else {
-        panic!("auth_var initialised with non-ptrauth constant {:?}", auth_var_init);
+    } else {
+        panic!(
+            "auth_var initialised with non-ptrauth constant {:?}",
+            auth_var_init
+        );
     }
 }
 

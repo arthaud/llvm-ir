@@ -18,7 +18,11 @@ pub enum Name {
 }
 
 impl Name {
-    pub(crate) fn name_or_num(s: String, ctr: &mut usize, interner: &mut crate::from_llvm::StringInterner) -> Self {
+    pub(crate) fn name_or_num(
+        s: String,
+        ctr: &mut usize,
+        interner: &mut crate::from_llvm::StringInterner,
+    ) -> Self {
         if s.is_empty() {
             let rval = Name::Number(*ctr);
             *ctr += 1;

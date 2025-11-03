@@ -2653,8 +2653,8 @@ fn param_and_func_attributes() {
     assert_eq!(
         f.function_attributes[0],
         FunctionAttribute::StringAttribute {
-            kind: "thunk".into(),
-            value: "".into()
+            kind: Box::new("thunk".into()),
+            value: None
         }
     );
     let f = module.get_func_by_name("f.uwtable").unwrap();
@@ -2665,8 +2665,8 @@ fn param_and_func_attributes() {
     assert_eq!(
         f.function_attributes[0],
         FunctionAttribute::StringAttribute {
-            kind: "cpu".into(),
-            value: "cortex-a8".into()
+            kind: Box::new("cpu".into()),
+            value: Some(Box::new("cortex-a8".into()))
         }
     );
     let f = module.get_func_by_name("f.norecurse").unwrap();

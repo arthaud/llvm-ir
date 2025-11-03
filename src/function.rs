@@ -245,8 +245,8 @@ pub enum FunctionAttribute {
         inaccessible_mem: MemoryEffect,
     },
     StringAttribute {
-        kind: String,
-        value: String, // for no value, use ""
+        kind: Box<String>,
+        value: Option<Box<String>>,
     },
     UnknownAttribute, // this is used if we get a value not in the above list
 }
@@ -289,8 +289,8 @@ pub enum ParameterAttribute {
     #[cfg(feature = "llvm-11-or-greater")]
     NoUndef,
     StringAttribute {
-        kind: String,
-        value: String, // for no value, use ""
+        kind: Box<String>,
+        value: Option<Box<String>>,
     },
     UnknownAttribute, // this is used if we get an EnumAttribute not in the above list; or, for LLVM 11 or lower, also for some TypeAttributes (due to C API limitations)
     #[cfg(feature = "llvm-12-or-greater")]
@@ -822,9 +822,14 @@ impl FunctionAttribute {
                 },
             }
         } else if unsafe { LLVMIsStringAttribute(a) } != 0 {
+            let value = unsafe { get_string_attribute_value(a) };
             Self::StringAttribute {
-                kind: unsafe { get_string_attribute_kind(a) },
-                value: unsafe { get_string_attribute_value(a) },
+                kind: Box::new(unsafe { get_string_attribute_kind(a) }),
+                value: if value.is_empty() {
+                    None
+                } else {
+                    Some(Box::new(value))
+                },
             }
         } else {
             debug!("Encountered an unknown function attribute: neither enum nor string");
@@ -878,9 +883,14 @@ impl ParameterAttribute {
                 },
             }
         } else if unsafe { LLVMIsStringAttribute(a) } != 0 {
+            let value = unsafe { get_string_attribute_value(a) };
             Self::StringAttribute {
-                kind: unsafe { get_string_attribute_kind(a) },
-                value: unsafe { get_string_attribute_value(a) },
+                kind: Box::new(unsafe { get_string_attribute_kind(a) }),
+                value: if value.is_empty() {
+                    None
+                } else {
+                    Some(Box::new(value))
+                },
             }
         } else if Self::is_type_attr(a) {
             #[cfg(feature = "llvm-11-or-lower")]
